@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -9,15 +11,27 @@ public class PlayerController : MonoBehaviour
     public Transform bulletPoint;
     public GameObject bulletPrefab;
     public GameObject shootFX;
+    public GameObject hitFX;
 
     public float bulletSpeed = 10;
     public float speed = 10;
     public Vector2 rotationSpeed = new Vector2(10, 10);
     public float minRotationX = -75f;
-    public float maxRotationx = 0f;
+    public float maxRotationX = 0f;
 
     private Vector2 moveInput;
     private Vector2 cannonRotation;
+
+    public Image hpBar;
+    public float hp = 5;
+    private float maxHp;
+
+    public float deathDuration = 5;
+
+    private void Start()
+    {
+        maxHp = hp;
+    }
 
     private void FixedUpdate()
     {
@@ -42,11 +56,12 @@ public class PlayerController : MonoBehaviour
         cannonRotation.y += lookInput.x * rotationSpeed.y * Time.deltaTime;
         cannonRotation.x += lookInput.y * rotationSpeed.x * Time.deltaTime;
 
-        cannonRotation.x = Mathf.Clamp(cannonRotation.x, minRotationX, maxRotationx);
+        cannonRotation.x = Mathf.Clamp(cannonRotation.x, minRotationX, maxRotationX);
 
-        cannon.localRotation = Quaternion.Euler(cannonRotation.x, 0f, 0f);
         turret.localRotation = Quaternion.Euler(0f, cannonRotation.y, 0f);
+        cannon.localRotation = Quaternion.Euler(cannonRotation.x, 0f, 0f);
     }
+
     public void OnShoot(InputAction.CallbackContext context)
     {
         if (context.performed)
@@ -55,11 +70,27 @@ public class PlayerController : MonoBehaviour
 
             GameObject bullet = Instantiate(bulletPrefab, bulletPoint.position, bulletPoint.rotation);
             bullet.GetComponent<Rigidbody>().linearVelocity = bulletPoint.forward * bulletSpeed;
-
         }
-
-
     }
-}
 
-     
+    public void GetHit(float damage)
+    {
+        if (hp > 0)
+        {
+            if (hitFX) Instantiate(hitFX, transform.position, transform.rotation);
+
+            hp -= damage;
+            hpBar.fillAmount = hp / maxHp;
+            if (hp > 0)
+            {
+                //Leva hit
+            }
+            else
+            {
+                Invoke(nameof(Reload), deathDuration);
+            }
+        }
+    }
+
+    public void Reload() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+}
